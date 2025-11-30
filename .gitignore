@@ -1,0 +1,19 @@
+# Build
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+.idea/
+
+# OS junk
+.DS_Store
+*.log
+
+# Local config & DB
+appsettings.Development.json
+appsettings.Local.json
+*.db

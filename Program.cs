@@ -1,41 +1,32 @@
+using Microsoft.EntityFrameworkCore;
+using MovieVault.Api.Data;
+using MovieVault.Api.Endpoints;   // <-- needed for MapGenres/MapMovies
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// EF Core
+builder.Services.AddDbContext<MovieVaultContext>(opt =>
+    opt.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+app.MapGet("/", () => "MovieVault API is running!");
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// your endpoints
+app.MapGenres();
+app.MapMovies();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+// auto-migrate + seed
+using var scope = app.Services.CreateScope();
+var db = scope.ServiceProvider.GetRequiredService<MovieVaultContext>();
+db.Database.Migrate();
+Seed.Initialize(db);
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
